@@ -1,0 +1,13 @@
+{
+  "name": "alice-ground",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The moving gradient on alice.law: the Alice Ground looks, made cheap enough for the website.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "stills": "node tools/stills.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

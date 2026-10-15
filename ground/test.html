@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alice Ground · test page</title>
+<style>
+  /* ---- the grounds' CSS, as on the website (README.md); here the images are next to the page ---- */
+  [data-alice-ground] { isolation: isolate; }
+  @supports (mix-blend-mode: plus-lighter) and (mix-blend-mode: difference) {
+    [data-alice-ground]::before, [data-alice-ground]::after {
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; pointer-events: none;
+      background: url(images/grain.png) 0 0 / 128px 128px repeat;
+    }
+    [data-alice-ground]::before { mix-blend-mode: plus-lighter; }                              /* adds 0-17 levels */
+    [data-alice-ground]::after { mix-blend-mode: difference; background-position: 61px 37px; }  /* takes 0-17 off */
+    @media (min-resolution: 1.25dppx), (-webkit-min-device-pixel-ratio: 1.25) {
+      [data-alice-ground]::before, [data-alice-ground]::after { background-size: 102.4px 102.4px; }
+    }
+    @media (min-resolution: 1.5dppx), (-webkit-min-device-pixel-ratio: 1.5) {
+      [data-alice-ground]::before, [data-alice-ground]::after { background-size: 85.3333px 85.3333px; }
+    }
+  }
+
+  /* ---- the page ---- */
+  :root { --ink: #000; --ink-72: rgba(0, 10, 38, .72); --muted: rgba(0, 10, 38, .6); --line: rgba(0, 10, 38, .12); --night: #010202; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  .bar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 20px;
+    background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar h1 { margin: 0 8px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .seg { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 9px; }
+  .seg button { padding: 5px 11px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .status { margin-left: auto; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1440px; margin: 0 auto; }
+  body.phone .wrap { max-width: 390px; box-shadow: 0 0 0 1px var(--line); }
+  .label { display: flex; justify-content: space-between; gap: 16px; padding: 48px 24px 14px; color: var(--muted); font-size: 13px; }
+  .label b { color: var(--ink); font-weight: 600; }
+  .ground { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; background-color: var(--night);
+    background-position: 50% 0, 0 0; background-size: 100% 100%, 100% 100%; background-repeat: no-repeat; }
+
+  /* hero: the field on its own, at v9's proportions */
+  .hero { position: relative; overflow: hidden; aspect-ratio: 1440 / 1125; }
+  .g-hero { background-image: url(images/hero-desktop.webp), linear-gradient(180deg, #ebfef6 0%, #e7fbf3 20%, #85ada9 40%, #145256 55%, #001a1f 70%, #00070b 85%, #000305 100%); }
+  body.phone .hero { aspect-ratio: 390 / 413; }
+  body.phone .g-hero { background-image: url(images/hero-phone.webp), linear-gradient(180deg, #eafef6 0%, #e5faf2 20%, #78a2a0 40%, #104f54 55%, #00191f 70%, #00070b 85%, #000305 100%); }
+
+  /* the pricing plan card */
+  .plan-row { display: flex; justify-content: center; padding: 0 24px; }
+  .plan { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; width: min(792px, 100%); aspect-ratio: 792 / 631;
+    padding: 40px; border-radius: 28px; background: #03090b; color: #fff; }
+  .plan > * { position: relative; z-index: 1; }
+  .plan .ground { position: absolute; z-index: 0; }
+  .plan b { font-size: 30px; line-height: 36px; font-weight: 500; letter-spacing: -.02em; }
+  .plan span { color: rgba(255, 255, 255, .7); font-size: 14px; }
+  .g-plan { background-image: url(images/plan-desktop.webp), linear-gradient(180deg, #1f3e3f 0%, #113335 20%, #022326 40%, #00181c 55%, #000f13 70%, #00080c 85%, #000407 100%); }
+  body.phone .plan { aspect-ratio: 358 / 833; padding: 28px 24px; border-radius: 20px; }
+  body.phone .g-plan { background-image: url(images/plan-phone.webp), linear-gradient(180deg, #1a393a 0%, #0d2f32 20%, #002125 40%, #00171b 55%, #000e12 70%, #00070b 85%, #000406 100%); }
+
+  /* the closing, as built in Webflow: white page above, the fade, the text on the light, into the black footer */
+  .above { display: grid; place-items: center; height: 220px; color: var(--muted); font-size: 13px; }
+  .closing { position: relative; overflow: hidden; background: var(--night); }
+  .g-close { background-image: url(images/close-desktop.webp), linear-gradient(180deg, #f0fcf8 0%, #effcf7 20%, #effcf7 40%, #e5f3ee 55%, #678383 70%, #00080b 85%, #000202 100%); }
+  body.phone .g-close { background-image: url(images/close-phone.webp), linear-gradient(180deg, #b1c6c2 0%, #effcf7 20%, #f0fcf7 40%, #effcf7 55%, #96aeab 70%, #000c0f 85%, #000202 100%); }
+  .fade { position: absolute; top: 0; left: 0; right: 0; z-index: 1; height: 300px; pointer-events: none;
+    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, .94) 14%, rgba(255, 255, 255, .77) 32%, rgba(255, 255, 255, .5) 52%, rgba(255, 255, 255, .21) 74%, rgba(255, 255, 255, 0) 100%); }
+  .closing-in { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 200px 24px 320px; text-align: center; }
+  .closing h2 { max-width: 1120px; margin: 0; font-size: 72px; line-height: 76px; font-weight: 500; letter-spacing: -.036em; text-wrap: balance; }
+  .closing h2 span { color: var(--muted); }
+  .closing p { margin: 0; color: var(--ink-72); }
+  .closing .sub { font-size: 20px; line-height: 30px; letter-spacing: -.01em; }
+  .closing .note { font-size: 14px; line-height: 20px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 15px 32px; border-radius: 8px; background: #000; color: #fff; font-size: 16px; line-height: 20px; font-weight: 500; text-decoration: none; }
+  body.phone .fade { height: 200px; }
+  body.phone .closing-in { padding: 144px 16px 220px; }
+  body.phone .closing h2 { font-size: 40px; line-height: 44px; }
+  body.phone .closing h2 span { display: block; }
+  body.phone .closing .sub { font-size: 18px; line-height: 28px; }
+  body.phone .btn { align-self: stretch; justify-content: center; }
+  .foot { height: 160px; background: var(--night); color: rgba(255, 255, 255, .4); display: grid; place-items: center; font-size: 13px; }
+
+  /* still only: the live canvases hidden, the image and its grain left */
+  body.still [data-alice-ground] > canvas { visibility: hidden !important; }
+  @media (max-width: 640px) { .closing h2 { font-size: 40px; line-height: 44px; } .status { margin-left: 0; } }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <h1>Alice Ground <span id="v"></span></h1>
+    <div class="ctl">Show <span class="seg" data-ctl="view"><button aria-pressed="true" data-v="live">Live</button><button aria-pressed="false" data-v="still">Still image</button></span></div>
+    <div class="ctl">Frame rate <span class="seg" data-ctl="fps"><button aria-pressed="true" data-v="30">30</button><button aria-pressed="false" data-v="60">60</button></span></div>
+    <div class="ctl">Width <span class="seg" data-ctl="width"><button aria-pressed="true" data-v="desktop">Desktop</button><button aria-pressed="false" data-v="phone">Phone</button></span></div>
+    <div class="status" id="status">Starting…</div>
+  </div>
+
+  <div class="wrap">
+    <div class="label"><span><b>Hero</b> · the design system's field (v5), moving grain</span><span>hero-desktop.webp · hero-phone.webp</span></div>
+    <section class="hero"><div class="ground g-hero" data-alice-ground="hero"></div></section>
+
+    <div class="label"><span><b>Pricing plan</b> · the dark version, moving slowly</span><span>plan-desktop.webp · plan-phone.webp</span></div>
+    <div class="plan-row">
+      <div class="plan"><div class="ground g-plan" data-alice-ground="plan"></div><b>Plan card</b><span>The text and prices go here.</span></div>
+    </div>
+
+    <div class="label"><span><b>Closing</b> · as on the website, above the footer</span><span>close-desktop.webp · close-phone.webp</span></div>
+    <div class="above">Page content above the closing</div>
+    <section class="closing">
+      <div class="ground g-close" data-alice-ground="close"></div>
+      <div class="fade" aria-hidden="true"></div>
+      <div class="closing-in">
+        <h2>Built by lawyers. <span>For lawyers.</span></h2>
+        <p class="sub">Start with your own case.</p>
+        <a class="btn" href="#">Start free trial <span aria-hidden="true">↗</span></a>
+        <p class="note">14 days · No credit card · Try it on your own case</p>
+      </div>
+    </section>
+    <div class="foot">Footer</div>
+  </div>
+
+  <script src="alice-ground.min.js" data-fps="30" defer></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var G = window.AliceGround, status = document.getElementById('status');
+    document.getElementById('v').textContent = G ? G.version : '(script not found)';
+    function press(seg, v) { seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === v ? 'true' : 'false'); }); }
+    document.querySelectorAll('.seg').forEach(function (seg) {
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        var v = b.getAttribute('data-v'), what = seg.getAttribute('data-ctl');
+        press(seg, v);
+        if (what === 'view') document.body.classList.toggle('still', v === 'still');
+        if (what === 'fps' && G) G.setFps(+v);
+        if (what === 'width') document.body.classList.toggle('phone', v === 'phone');
+      });
+    });
+    var lastDrawn = 0, lastT = performance.now();
+    setInterval(function () {
+      if (!G) return;
+      var now = performance.now(), d = G.drawn - lastDrawn, rate = d * 1000 / (now - lastT);
+      lastDrawn = G.drawn; lastT = now;
+      var on = G.items.filter(function (it) { return it.visible; }).length;
+      var gl = G.webgl === false ? 'no WebGL 2: stills only' : G.webgl ? 'WebGL 2' : 'waiting';
+      var state = G.frozen ? 'stopped (device too slow)' : matchMedia('(prefers-reduced-motion: reduce)').matches ? 'one still frame (reduced motion)' : G.running ? on + ' on screen, drawing ' + Math.round(rate) + ' frames a second' : 'paused (nothing on screen)';
+      status.textContent = gl + ' · set to ' + G.fps + ' fps · ' + state;
+    }, 1000);
+  });
+  </script>
+</body>
+</html>
