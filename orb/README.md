@@ -8,14 +8,14 @@ Alice as she is in the app: the orb, live. On the homepage she sits in the middl
 
 | File | |
 |---|---|
-| `alice-orb.min.js` | What the website loads. 53 KB, 17–20 KB compressed. Most of it is the orb's shader, which is kept exactly as it is in v9. |
+| `alice-orb.min.js` | What the website loads. 54 KB, about 20 KB compressed. Most of it is the orb's shader, which is kept exactly as it is in v9. |
 | `alice-orb.js` | The same code, readable. |
 | `images/still.webp` | The still under the orb: a frame of v9's orb in the diagram, at twice its size (261 × 261, 23 KB). On the website it is `home-orb.webp` in Webflow's Assets. |
-| `src/` | The source. `src/lib/orb.js` is v9's orb, **unchanged** (from `alice-app-v9.js`, which lifted it from the Orb Lab); `src/gl.js` is the page's one WebGL context, the same code as Alice Ground's; `src/site.js` runs it on the website. |
+| `src/` | The source. `src/lib/orb.js` is v9's orb (from `alice-app-v9.js`, which lifted it from the Orb Lab), unchanged but for two lines marked 1.1.0 that let it draw straight into its canvas; `src/gl.js` is the orb's WebGL context, on the canvas on the page; `src/site.js` runs it on the website. |
 | `tools/build.mjs` | Makes the two script files from `src/`. |
 | `test.html` | The test page. |
 
-A frame drawn by this script is the same frame as homepage v9's, pixel for pixel: checked through a whole round (listening, the three pulses, reading, the finish, rest) at 1×, 2× and 3× pixel density.
+At the same size, a frame drawn by this script is the same frame as homepage v9's, pixel for pixel: checked through a whole round (listening, the three pulses, reading, the finish, rest) at 1×, 2× and 3× pixel density, and again for 1.1.0. What 1.1.0 changes is the size it is drawn at on standard screens (see below).
 
 ## What it does on a page
 
@@ -24,10 +24,11 @@ A frame drawn by this script is the same frame as homepage v9's, pixel for pixel
 - Makes its WebGL context and compiles the orb's shaders while the browser is idle, shortly before the orb comes on screen, so nothing stutters as it scrolls in.
 - Draws only while the orb is on screen and the tab is visible. A round it has started is finished even if the orb is scrolled away, then it stops.
 - Draws 60 frames a second (30 if the loader says so). The motion is timed by the clock, so it has the same speed either way.
-- Draws at the orb's own size, at most 2 device pixels per CSS pixel: the homepage's orb is 256 × 256 pixels on a Retina screen or a phone, 128 × 128 on a standard one.
+- Draws at 2 pixels per CSS pixel on every screen: the homepage's orb is 256 × 256 pixels. On a standard screen (1 pixel per CSS pixel) the browser shrinks it to fit, which makes it as sharp as on a Retina screen; v9 drew it at 128 × 128 there, which left it soft.
+- Keeps an eye on the frame rate: on a device that draws under 70% of the frames it should, the orb is drawn at the screen's own density instead; under 12 frames a second for 2.5 seconds even so, the still comes back (as the gradient stops on such a device).
 - Leaves the still in place for people who have turned motion off (`prefers-reduced-motion`); the light along the lines is off for them too.
 - Without WebGL 2, or if the orb's shaders don't compile on a device, it does nothing and the still stays.
-- Shares the page's WebGL context with the gradient (Alice Ground) when the gradient's script arrives first, as in v9. Otherwise the page has two contexts, one each, which is just as fine.
+- Has a WebGL context of its own, on the one canvas it puts on the page, and draws the orb straight into it; the canvas moves to whichever orb is showing (on the homepage, the desktop or the phone diagram). If the browser takes the context away, the still shows at once until it is given back.
 
 ## In Webflow
 
@@ -36,8 +37,8 @@ A frame drawn by this script is the same frame as homepage v9's, pixel for pixel
 ```js
 var ORB = '.home-flow_orb, .home-flow-v_orb';   /* where the orb goes: Alice in the homepage's sources diagram */
 …
-{ on: ORB, file: 'v1.2.0/orb/alice-orb.min.js',
-  integrity: 'sha384-QtRmvHKZFSYIGp7S8iJZzsUP0e7m1S6G04mWsJZ8cEiLSQkv9S54S8ABNrqsOj5z',
+{ on: ORB, file: 'v1.3.0/orb/alice-orb.min.js',
+  integrity: 'sha384-EFjUvW6KKZkFgjQvViWB7GCk68ka6OrrcujVSkHZYT5ZEtT5/luk8/hJ/VzUfAWa',
   data: { targets: ORB, sync: '.pl:not(.out)', fps: '60' } }
 ```
 
@@ -59,5 +60,11 @@ The `integrity` value belongs to this version's file; every version has its own.
 4. Commit, make a release with the new tag, and update the website: the loader's `file` and `integrity` (`openssl dgst -sha384 -binary alice-orb.min.js | openssl base64 -A` gives the integrity, after `sha384-`). Publish.
 
 ## Versions
+
+**1.1.0** (15 October 2026, in release v1.3.0 of this repository)
+- Drawn straight into the canvas on the page. Until now, as in v9, the orb was drawn into a hidden canvas shared with the gradient and each frame copied onto the canvas on the page; on some computers the page could show a copy that was only partly updated. Now a frame reaches the screen whole, and there is no copy to make.
+- Drawn at 2 pixels per CSS pixel on every screen, so on standard screens it is as sharp as on Retina ones (it was soft there). At the same size the frames are v9's, pixel for pixel.
+- A device that can't keep up gets the screen's own density, then the still (see "What it does on a page").
+- No longer shares a context with the gradient: from Alice Ground 1.3.0 each has its own.
 
 **1.0.0** (15 October 2026, in release v1.2.0 of this repository): first release.

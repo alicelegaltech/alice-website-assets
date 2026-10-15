@@ -8,18 +8,18 @@ The moving gradient: light sources over an asymmetric wedge, coloured through an
 
 | File | |
 |---|---|
-| `alice-ground.min.js` | What the website loads. 33.8 KB, 11–13 KB compressed. |
+| `alice-ground.min.js` | What the website loads. 34.1 KB, about 13 KB compressed. |
 | `alice-ground.js` | The same code, readable. |
 | `images/*.webp` | The stills under each gradient: the look's first frame without grain, wider than any section it goes in, small and without loss (under 40 KB each). |
 | `images/grain.png` | The grain laid over the stills (9 KB). |
 | `src/` | The source. `src/lib/` is the Alice-gradient-background sandbox's `ramp.js`, `shaders.js` and `renderer.js`, **unchanged**; `src/ds-field.js` is the design system's field (the hero, as in v5); `src/site.js` runs it on the website. |
 | `tools/` | `build.mjs` makes the two script files from `src/`; `stills.mjs` makes the images. |
 
-Below 2600 device pixels a frame drawn by this script is the same frame as homepage v9's, pixel for pixel (checked for every look at several sizes and moments). Above that, see 1.1.0 under Versions.
+Below 2600 device pixels a frame drawn by this script is the same frame as homepage v9's, pixel for pixel (checked for every look at several sizes and moments, again for 1.3.0). Above that, see 1.1.0 under Versions.
 
 ## What it does on a page
 
-- Finds every element with `data-alice-ground` and puts a canvas in it that fades in (900 ms) over the element's own background: the still.
+- Finds every element with `data-alice-ground` and puts a canvas in it that fades in (900 ms) over the element's own background: the still. Once it has faded in, the element gets `data-alice-live`, and the grain CSS (below) takes the still's grain away under it.
 - Starts only when its section comes near the screen; until then the page has no WebGL at all.
 - Pauses when the section is scrolled away or the tab is hidden.
 - Draws 30 frames a second (60 if the loader says so). The motion is timed by the clock, so it has the same speed either way.
@@ -27,7 +27,7 @@ Below 2600 device pixels a frame drawn by this script is the same frame as homep
 - Stops moving and keeps its last frame on a device that draws fewer than 12 frames a second for 2.5 seconds.
 - Shows one still frame to people who have turned motion off (`prefers-reduced-motion`).
 - Without WebGL 2 it does nothing, and the still stays.
-- Uses one WebGL context for every gradient on the page, and recovers if the browser takes it away.
+- Draws each gradient straight into its own canvas on the page, with a WebGL context of its own, so every frame reaches the screen whole (see 1.3.0 under Versions). If the browser takes a context away, the still shows at once until it is given back.
 - Keeps the gradient's proportions on very large screens: a canvas is at most 2600 device pixels either way, and a bigger section is drawn at a lower resolution rather than squeezed.
 
 ## In Webflow
@@ -35,12 +35,12 @@ Below 2600 device pixels a frame drawn by this script is the same frame as homep
 **1. The script.** The loader in the site's footer code loads it (see the [main README](../README.md)). Its line for this piece:
 
 ```js
-{ on: '[data-alice-ground]', file: 'v1.1.0/ground/alice-ground.min.js',
-  integrity: 'sha384-ckF9OkUmze1K2XUrHHmRe3sVVSNRlZIZ7qcBwXoQx6t9HS2pFKh3Ow6/rUQohuRb',
+{ on: '[data-alice-ground]', file: 'v1.3.0/ground/alice-ground.min.js',
+  integrity: 'sha384-dM/1aO0EdZP9rt8z60mgqVkcetvZCKJrH5Xr6TTBHTUAtZIM6MG/7E5RbJiU6N/6',
   data: { fps: '30' } }
 ```
 
-The `integrity` value belongs to v1.1.0's file; every version has its own.
+The `integrity` value belongs to 1.3.0's file (release v1.3.0); every version has its own.
 
 **2. The images** are copies in Webflow's Assets, named `alice-ground-close-desktop.webp` and so on.
 
@@ -65,6 +65,9 @@ The `integrity` value belongs to v1.1.0's file; every version has its own.
     [data-alice-ground]::before, [data-alice-ground]::after { background-size: 85.3333px 85.3333px; }
   }
 }
+/* once the moving gradient covers the still (data-alice-live, from 1.3.0), the grain goes */
+[data-alice-ground][data-alice-live] { isolation: auto; }
+[data-alice-ground][data-alice-live]::before, [data-alice-ground][data-alice-live]::after { display: none; }
 </style>
 ```
 
@@ -87,6 +90,8 @@ The hero and the plan use the same look on phones, so one still each covers ever
 
 Anything inside the section that should sit on top of the gradient needs a higher z-index than the ground (the closing's white fade is 1, its content 2).
 
+To fade the gradient into the page, put a plain layer over it, a div with a gradient from the page's colour to transparent, as the closing's white fade and the hero's mint fade (`.home-hero_ground-top`, inside the ground, z-index 2) do. Not a CSS mask on the ground: a mask makes the browser redraw the whole masked area, in tiles, every time the gradient moves.
+
 ## Why the stills are made this way
 
 v9's stills were JPEGs at 1× with the grain baked in. JPEG compresses in 8 × 8 blocks and grain is the hardest thing to compress, so it broke up into square patches, and Retina and phone screens enlarged them two to three times. They were also made for one size of section and stretched to fill any other, while the gradient itself doesn't stretch, so at other widths the still had a different shape from the moving gradient.
@@ -102,6 +107,13 @@ These stills are the frame without grain, wide enough for any section, a sixth o
 5. Commit, make a release with the new tag, and update the website: the loader's `file` and `integrity` (`openssl dgst -sha384 -binary alice-ground.min.js | openssl base64 -A` gives the integrity, after `sha384-`), new images into Webflow's Assets if they changed. Publish.
 
 ## Versions
+
+**1.3.0** (15 October 2026, in release v1.3.0 of this repository; there is no 1.2.0 of the gradient: the repository's v1.2.0 added the orb)
+- Each gradient draws straight into its own canvas on the page, with a WebGL context of its own. Until now, as in v9, every gradient was drawn into one hidden canvas and each frame copied from there onto the canvas on the page. On some computers (seen on Windows with an external screen) the page could then show a copy that was only partly updated: a rectangle of the gradient a moment out of step with the rest. Drawn straight into the canvas on the page, a frame reaches the screen whole, and there is no copy to make: the page's main thread no longer waits for the graphics chip to finish each frame.
+- The frames are the same as 1.1.0's, pixel for pixel, at every size and pixel density checked.
+- The element gets `data-alice-live` once its canvas has faded in; the grain CSS uses it to take the still's grain away under the moving gradient (see "In Webflow", 3).
+- A context taken away by the browser: the still shows at once, and the gradient fades back in when it is given back.
+- `window.AliceGL`, the shared context, is gone; the orb (from its 1.1.0) has its own. `AliceGround.redraw()` draws every gradient at once, for testing.
 
 **1.1.0** (15 October 2026)
 - Stills wider than any section, fitted to the height and centred on the website (`background-size: auto 100%`), instead of made for v9's proportions and stretched. They now match the moving gradient at any width.

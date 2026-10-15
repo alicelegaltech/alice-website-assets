@@ -1,6 +1,6 @@
 {
   "name": "alice-orb",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "The live Alice orb on alice.law: v9's orb, over a still of itself.",
   "scripts": {

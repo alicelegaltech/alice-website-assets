@@ -8,11 +8,17 @@
    moving on a device that cannot keep up, and shows one still frame to people who turn
    motion off. Without WebGL 2 nothing happens and the still stays.
 
-   From v9's runtime, unchanged: one WebGL context for the whole page that every gradient
-   draws through in turn (browsers keep only a few alive per page), the looks, and how a frame
-   is drawn and copied out. So a frame here is v9's frame, pixel for pixel, with one exception
-   (1.1.0): a box too big for a canvas (2600 device pixels either way) is drawn at a lower
-   resolution in both directions, so it keeps its proportions, where v9 squeezed it in one.
+   1.3.0: each gradient draws straight into its own canvas, the one on the page, with a WebGL
+   context of its own. v9 drew every gradient into one hidden canvas and copied each frame
+   from there onto the canvas on the page; on some computers (seen on Windows, with an external
+   screen) the page could show a copy that was only partly updated, as a rectangle of the
+   gradient a moment out of step. Drawn straight into the canvas on the page, a frame reaches
+   the screen whole, and there is no copy to make. The looks, and how a frame is drawn, are
+   v9's: a frame here is v9's frame, pixel for pixel (with 1.1.0's exception: a box too big for
+   a canvas, 2600 device pixels either way, is drawn at a lower resolution in both directions,
+   so it keeps its proportions, where v9 squeezed it in one).
+   When its canvas has faded in, the element gets data-alice-live, so the page's CSS can take
+   the still's grain away under it (it no longer shows, and the browser no longer mixes it in).
 
      <div data-alice-ground="close"></div>       close · hero · plan (an element that is positioned)
      <script src=".../alice-ground.min.js" data-fps="30" async></script>     30 or 60
@@ -20,51 +26,14 @@
 
    window.AliceGround: mount(canvas, look), attach(element), scan(), relook(canvas, look),
    still(look, w, h), setFps(n), freeze(), LOOKS, look(name), items, version, and for testing:
-   fps, frozen, running, drawn (frames drawn so far), webgl (true, false, or null before the first frame).
+   redraw() (draws every gradient now), fps, frozen, running, drawn (frames drawn so far),
+   webgl (true, false, or null before the first frame).
    =========================================================================== */
 (function () {
   'use strict';
   if (window.AliceGround) return;                    // loaded twice: the first one runs the page
   var VERSION = '__VERSION__';
   var me = document.currentScript;
-
-  // ---------------------------------------------------------------- the shared context
-  // As in v9, except that it is only made when a gradient first draws, not when the script loads.
-  var AliceGL = (function () {
-    var canvas = null, gl = null, clients = [], res = {}, lostAt = 0, ever = false;
-    function make() {
-      canvas = document.createElement('canvas');
-      canvas.width = 1024; canvas.height = 1024;
-      canvas.addEventListener('webglcontextlost', function (e) {
-        e.preventDefault();                                  // ask for it back
-        lostAt = performance.now(); res = {};
-        clients.forEach(function (c) { if (c.lost) c.lost(); });
-      });
-      canvas.addEventListener('webglcontextrestored', function () { lostAt = 0; res = {}; ready(); });
-      gl = null;
-      try { gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: false, depth: false, stencil: false }); } catch (e) { gl = null; }
-      if (gl && !gl.isContextLost()) ready();
-    }
-    function ready() { ever = true; clients.forEach(function (c) { c.init(gl); }); }
-    function ok() {
-      if (!canvas) make();
-      if (gl && !gl.isContextLost()) return true;
-      // taken and not given back: a new one (it may take the place of another page's)
-      if (lostAt && performance.now() - lostAt > 2500) { lostAt = performance.now(); make(); }
-      return !!(gl && !gl.isContextLost());
-    }
-    return {
-      ok: ok,
-      get gl() { return gl; },
-      get canvas() { return canvas; },
-      get ever() { return ever; },
-      get tried() { return !!canvas; },
-      client: function (c) { clients.push(c); if (gl && !gl.isContextLost()) c.init(gl); },
-      res: function (key, build) { if (!(key in res)) res[key] = build(); return res[key]; },
-      need: function (w, h) { if (canvas.width < w) canvas.width = w; if (canvas.height < h) canvas.height = h; }
-    };
-  })();
-  if (!window.AliceGL) window.AliceGL = AliceGL;
 
   // ---------------------------------------------------------------- looks (v9's, unchanged)
   var AG = window.AG;
@@ -138,18 +107,55 @@
   var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var PHONE = 479;                   // Webflow's phone breakpoint: a ground this wide or narrower takes its phone look
   var MAXW = 2600, MAXH = 2600;      // v9's limits on a canvas, in device pixels
+  var FADE = 900;                    // ms: the canvas fades in over the still
+  // Each canvas's own context. Opaque (the gradient covers its whole box), double-buffered (a frame is shown whole,
+  // once it is finished), no extras it doesn't use, and asking the computer for its everyday graphics chip.
+  var ATTRS = { alpha: false, premultipliedAlpha: true, preserveDrawingBuffer: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' };
 
-  // ---------------------------------------------------------------- drawing (v9's, but for the canvas size in measure())
-  var items = [], raf = 0, last = 0, frozen = false, dead = false, startedAt = 0, slowFor = 0, drawn = 0;
+  // ---------------------------------------------------------------- drawing (v9's, straight into the item's canvas)
+  var items = [], raf = 0, last = 0, frozen = false, dead = false, startedAt = 0, slowFor = 0, drawn = 0, ever = false;
 
-  // what a renderer sees as its canvas: the shared context, and a size that is only the part it draws into
-  function stand() { return { getContext: function () { return AliceGL.gl; }, width: 1, height: 1, clientWidth: 1, clientHeight: 1 }; }
+  // the item's WebGL context, made the first time it draws
+  function context(it) {
+    if (it.gl) {
+      if (!it.gl.isContextLost()) return it.gl;
+      // taken away and not given back: a new canvas, with a new context (attach()'s canvases only)
+      if (it.el && it.lostAt && performance.now() - it.lostAt > 2500) renew(it); else return null;
+    }
+    var gl = null;
+    try { gl = it.canvas.getContext('webgl2', ATTRS); } catch (e) { gl = null; }
+    if (!gl) { if (!ever) dead = true; return null; }   // no WebGL 2 on this device: the stills stay
+    it.gl = gl; ever = true;
+    return gl;
+  }
+  function listen(it, c) {
+    c.addEventListener('webglcontextlost', function (e) {
+      e.preventDefault();                                // ask for it back
+      it.lostAt = performance.now(); it.r = null;
+      hide(it);                                          // the still shows until it is back
+    });
+    c.addEventListener('webglcontextrestored', function () { it.lostAt = 0; it.r = null; if (it.visible) kick(); else idle(function () { drawOne(it); }); });
+  }
+  function renew(it) {
+    var old = it.canvas, c = document.createElement('canvas');
+    c.setAttribute('aria-hidden', 'true');
+    c.style.cssText = old.style.cssText;
+    c.style.opacity = '0';
+    c._ground = it;
+    if (old.parentNode) old.parentNode.replaceChild(c, old);
+    old._ground = null;
+    it.canvas = c; it.gl = null; it.r = null; it.w = it.h = 0; it.lostAt = 0;
+    listen(it, c);
+  }
+  // what a renderer sees as its canvas: the item's context, and a size it may set freely (the real canvas is sized
+  // in measure(), only when it changes: setting a canvas's size clears it)
+  function stand(it) { return { getContext: function () { return it.gl; }, width: 1, height: 1, clientWidth: 1, clientHeight: 1 }; }
   function build(it) {
     try {
-      if (it.L.ds) { it.r = window.AliceDSGround.create(stand(), it.L.ds); }
+      if (it.L.ds) { it.r = window.AliceDSGround.create(stand(it), it.L.ds); }
       else {
         Object.assign(AG.P, it.L.params);
-        it.r = AG.createRenderer(stand(), { preserveDrawingBuffer: true });
+        it.r = AG.createRenderer(stand(it), { preserveDrawingBuffer: false });
         it.r.buildLut();
       }
     } catch (e) { it.r = null; }
@@ -161,14 +167,14 @@
     // separately, which squeezed the gradient sideways on very large screens)
     var s = Math.min(dpr, MAXW / Math.max(1, r.width), MAXH / Math.max(1, r.height));
     var w = Math.max(2, Math.min(MAXW, Math.round(r.width * s))), h = Math.max(2, Math.min(MAXH, Math.round(r.height * s)));
-    if (w !== it.w || h !== it.h) { it.w = w; it.h = h; it.canvas.width = w; it.canvas.height = h; it.ctx = null; }
+    if (w !== it.w || h !== it.h) { it.w = w; it.h = h; it.canvas.width = w; it.canvas.height = h; }
   }
   function drawOne(it) {
-    if (!AliceGL.ok()) return false;
+    if (dead) return false;
+    var gl = context(it);
+    if (!gl) return false;
     if (!it.r && !build(it)) return false;
     measure(it);
-    AliceGL.need(it.w, it.h);
-    var gl = AliceGL.gl;
     gl.disable(gl.BLEND); gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     if (it.L.ds) {
       it.r.draw((it.L.ds.time || 0) + it.clock * (it.L.ds.speed || 1), reduced ? 0 : it.frame++, it.w, it.h);
@@ -177,12 +183,28 @@
       it.r.setSize(it.w, it.h);
       it.r.draw(it.sources, it.clock);
     }
-    var ctx = it.ctx || (it.ctx = it.canvas.getContext('2d', { alpha: false }));
-    // the renderers draw into the bottom-left corner of the shared canvas (GL counts rows from the bottom)
-    ctx.drawImage(AliceGL.canvas, 0, AliceGL.canvas.height - it.h, it.w, it.h, 0, 0, it.w, it.h);
-    if (!it.ready) { it.ready = true; it.canvas.setAttribute('data-ready', ''); if (it.el) it.canvas.style.opacity = '1'; }
+    if (!it.ready) show(it);
     drawn++;
     return true;
+  }
+  // the first frame is on the canvas: it fades in, and once it covers the still the element says so
+  function show(it) {
+    it.ready = true;
+    it.canvas.setAttribute('data-ready', '');
+    if (!it.el) return;
+    it.canvas.style.transitionDuration = FADE + 'ms';   // the fade in (hide() takes it away)
+    it.canvas.style.opacity = '1';
+    clearTimeout(it.liveT);
+    it.liveT = setTimeout(function () { if (it.ready) it.el.setAttribute('data-alice-live', ''); }, FADE + 50);
+  }
+  function hide(it) {                                // at once: a canvas without its context has nothing to show
+    it.ready = false;
+    clearTimeout(it.liveT);
+    it.canvas.removeAttribute('data-ready');
+    if (!it.el) return;
+    it.el.removeAttribute('data-alice-live');
+    it.canvas.style.transitionDuration = '0ms';
+    it.canvas.style.opacity = '0';
   }
 
   // ---------------------------------------------------------------- the loop
@@ -200,7 +222,7 @@
       if (!reduced && !frozen) it.clock += dt * (it.L.ds ? 1 : it.L.params.speed);
       drawOne(it);
     });
-    if (!AliceGL.ever && AliceGL.tried && !AliceGL.gl) { dead = true; return; }   // no WebGL 2: the stills stay
+    if (dead) return;                                   // no WebGL 2: the stills stay
     if (any) pace(gap, now);
     if (any && !reduced && !frozen && !document.hidden) raf = requestAnimationFrame(tick);
   }
@@ -219,10 +241,6 @@
     last = now; raf = requestAnimationFrame(tick);
   }
   function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
-  AliceGL.client({
-    init: function () { items.forEach(function (it) { it.r = null; }); if (items.some(function (it) { return it.visible; })) kick(); },
-    lost: function () { items.forEach(function (it) { it.r = null; }); }
-  });
 
   // On screen (with a margin): animate. Near the screen: get ready while the browser is idle.
   var hasIO = 'IntersectionObserver' in window;
@@ -242,18 +260,21 @@
   document.addEventListener('visibilitychange', function () { if (document.hidden) stopLoop(); else kick(); });
 
   // mount(canvas, look): v9's call. lazy = wait until it comes near the screen before drawing.
-  function mount(canvas, l, lazy) {
+  // The element the observers watch is the ground itself when there is one (attach()), else the canvas.
+  function mount(canvas, l, lazy, el) {
     if (!canvas || canvas._ground) return canvas && canvas._ground;
-    var L = look(l);
-    var it = { canvas: canvas, L: L, sources: L.ds ? null : makeSources(L.sources), clock: L.ds ? 0 : L.time, frame: 0, visible: !hasIO, w: 0, h: 0, r: null, ctx: null, ready: false };
-    canvas._ground = it;
+    var L = look(l), box = el || canvas;
+    var it = { canvas: canvas, el: el || null, L: L, sources: L.ds ? null : makeSources(L.sources), clock: L.ds ? 0 : L.time, frame: 0, visible: !hasIO,
+               w: 0, h: 0, r: null, gl: null, lostAt: 0, ready: false, liveT: 0 };
+    canvas._ground = it; box._ground = it;
     items.push(it);
+    listen(it, canvas);
     if (!lazy) drawOne(it);                        // v9: one frame straight away, so it never waits for the observer
-    if (hasIO) { seen.observe(canvas); if (lazy) near.observe(canvas); } else kick();
+    if (hasIO) { seen.observe(box); if (lazy) near.observe(box); } else kick();
     if (window.ResizeObserver) new ResizeObserver(function () {
-      if (it.el) { var v = variant(it.el, it.name); if (v !== it.lookName) { it.lookName = v; relook(canvas, v); return; } }
+      if (it.el) { var v = variant(it.el, it.name); if (v !== it.lookName) { it.lookName = v; relook(it.canvas, v); return; } }
       if (it.r && !raf) drawOne(it);
-    }).observe(canvas);
+    }).observe(box);
     return it;
   }
   // a look's field changed in place (a phone look, or comparing looks on the page itself)
@@ -262,16 +283,19 @@
     var L = look(l), started = !!it.r; it.L = L; it.sources = L.ds ? null : makeSources(L.sources); it.clock = L.ds ? 0 : L.time; it.r = null;
     if (started) drawOne(it);
   }
-  // a still of a look at a size (the image under each field)
+  // a still of a look at a size (the image under each field): drawn on a canvas of its own, which is let go of after
   function still(l, w, h) {
     var c = document.createElement('canvas'); c.style.cssText = 'position:fixed;left:0;top:0;width:' + w + 'px;height:' + h + 'px;visibility:hidden';
     document.body.appendChild(c);
-    var L = look(l);
-    var it = { canvas: c, L: L, sources: L.ds ? null : makeSources(L.sources), clock: L.ds ? 0 : L.time, frame: 0, w: 0, h: 0 };
+    var L = look(l), gl = null;
+    try { gl = c.getContext('webgl2', { alpha: false, preserveDrawingBuffer: true, antialias: false, depth: false, stencil: false }); } catch (e) { gl = null; }
+    var it = { canvas: c, L: L, sources: L.ds ? null : makeSources(L.sources), clock: L.ds ? 0 : L.time, frame: 0, w: 0, h: 0, gl: gl, ready: true };
     var dpr = window.devicePixelRatio; Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true });
-    drawOne(it);
+    if (gl) drawOne(it);
     Object.defineProperty(window, 'devicePixelRatio', { value: dpr, configurable: true });
-    var url = c.toDataURL('image/png'); c.remove();
+    var url = c.toDataURL('image/png');
+    var lose = gl && gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+    c.remove();
     return url;
   }
 
@@ -285,10 +309,11 @@
     var name = el.getAttribute('data-alice-ground') || 'alice', v = variant(el, name);
     var c = document.createElement('canvas');
     c.setAttribute('aria-hidden', 'true');
-    c.style.cssText = 'position:absolute;left:0;top:0;z-index:1;display:block;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 900ms cubic-bezier(.2,.8,.2,1)';
+    c.style.cssText = 'position:absolute;left:0;top:0;z-index:1;display:block;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity ' + FADE + 'ms cubic-bezier(.2,.8,.2,1)';
     el.appendChild(c);
-    var it = mount(c, v, true);
-    it.el = el; it.name = name; it.lookName = v;
+    el._aliceGround = true;                        // claimed (mount sets the item)
+    var it = mount(c, v, true, el);
+    it.name = name; it.lookName = v;
     el._aliceGround = it;
     return it;
   }
@@ -298,10 +323,11 @@
   else scan();
 
   window.AliceGround = {
-    version: VERSION, mount: mount, attach: attach, scan: scan, relook: relook, still: still, look: look, LOOKS: LOOKS, items: items,
+    version: VERSION, mount: function (canvas, l, lazy) { return mount(canvas, l, lazy); }, attach: attach, scan: scan, relook: relook, still: still, look: look, LOOKS: LOOKS, items: items,
     setFps: function (n) { fps = readFps(n); }, freeze: freeze,
+    redraw: function () { items.forEach(function (it) { drawOne(it); }); },
     get fps() { return fps; }, get frozen() { return frozen; }, get running() { return !!raf; }, get drawn() { return drawn; },
-    get webgl() { return dead ? false : AliceGL.ever ? true : null; }
+    get webgl() { return dead ? false : ever ? true : null; }
   };
   if (!window.AliceGround9) window.AliceGround9 = window.AliceGround;   // v9's name
 })();

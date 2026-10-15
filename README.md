@@ -21,11 +21,11 @@ The code that runs on alice.law on top of what Webflow builds itself, one folder
   var BASE = 'https://cdn.jsdelivr.net/gh/alicelegaltech/alice-website-assets@';
   var ORB = '.home-flow_orb, .home-flow-v_orb';   /* where the orb goes: Alice in the homepage's sources diagram */
   var PIECES = [
-    { on: '[data-alice-ground]', file: 'v1.1.0/ground/alice-ground.min.js',
-      integrity: 'sha384-ckF9OkUmze1K2XUrHHmRe3sVVSNRlZIZ7qcBwXoQx6t9HS2pFKh3Ow6/rUQohuRb',
+    { on: '[data-alice-ground]', file: 'v1.3.0/ground/alice-ground.min.js',
+      integrity: 'sha384-dM/1aO0EdZP9rt8z60mgqVkcetvZCKJrH5Xr6TTBHTUAtZIM6MG/7E5RbJiU6N/6',
       data: { fps: '30' } },  /* frames a second: 30 or 60 */
-    { on: ORB, file: 'v1.2.0/orb/alice-orb.min.js',
-      integrity: 'sha384-QtRmvHKZFSYIGp7S8iJZzsUP0e7m1S6G04mWsJZ8cEiLSQkv9S54S8ABNrqsOj5z',
+    { on: ORB, file: 'v1.3.0/orb/alice-orb.min.js',
+      integrity: 'sha384-EFjUvW6KKZkFgjQvViWB7GCk68ka6OrrcujVSkHZYT5ZEtT5/luk8/hJ/VzUfAWa',
       data: { targets: ORB, sync: '.pl:not(.out)', fps: '60' } }   /* sync: the lines whose light it follows */
   ];
   var done = false;
@@ -50,7 +50,7 @@ The code that runs on alice.law on top of what Webflow builds itself, one folder
 
 Each piece has a line in `PIECES`: the elements it is for (`on`), its file at a release (`file`), and that file's `integrity`, so the browser only runs the exact file that was released. `data` puts attributes on the script tag. `ORB` lists the elements that get an orb; the orb's script gets the same list (`targets`), so it is written once. A new piece (the mockup, next) gets its own line.
 
-Each piece keeps the release it last changed in: the gradient's file is the same in v1.2.0 as in v1.1.0, so its line can stay at v1.1.0.
+Each piece keeps the release it last changed in. In v1.3.0 both changed (they now draw straight into the canvas on the page, see each README's Versions), so both lines point to v1.3.0.
 
 **Images don't come from here.** Webflow serves them with the rest of the site: each piece's images are uploaded to Webflow's Assets, and this repository keeps the originals and the tools that make them.
 
@@ -58,7 +58,7 @@ Each piece keeps the release it last changed in: the gradient's file is the same
 
 1. Change the code here and raise the version (each piece's README says how to build it).
 2. Commit, then make a release with a new tag (`v1.1.0`, `v1.2.0`, …).
-3. Open the new file's jsDelivr link once, so jsDelivr has it, e.g. `https://cdn.jsdelivr.net/gh/alicelegaltech/alice-website-assets@v1.1.0/ground/alice-ground.min.js`.
+3. Open the new file's jsDelivr link once, so jsDelivr has it, e.g. `https://cdn.jsdelivr.net/gh/alicelegaltech/alice-website-assets@v1.3.0/ground/alice-ground.min.js`.
 4. In the loader, change the version in `file` and the `integrity` (the piece's README gives it). If images changed, upload the new ones to Webflow's Assets and swap them in.
 5. Publish the site.
 

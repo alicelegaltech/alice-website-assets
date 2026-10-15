@@ -9,8 +9,13 @@
 
    Kept cheap: the WebGL context and the orb's shaders are made while the browser is idle, shortly before
    the orb comes on screen; it draws only while it is on screen and the tab is visible; the canvas is the
-   orb's own size (at most 2 device pixels per CSS pixel). People who turn motion off keep the still, and
-   without WebGL 2 nothing happens and the still stays.
+   orb's own size, at 2 pixels per CSS pixel. People who turn motion off keep the still, and without WebGL 2
+   nothing happens and the still stays.
+
+   1.1.0: the orb is drawn straight into the canvas on the page (see src/gl.js), one canvas that goes into
+   whichever orb is showing. And it is drawn at 2 pixels per CSS pixel on every screen: on a standard screen
+   (1 pixel per CSS pixel) the browser shrinks it to fit, which makes it as sharp as on a Retina screen; in
+   1.0.0 it was drawn at the screen's own density, which left it soft at 1x.
 
      <script src=".../alice-orb.min.js" data-targets=".home-flow_orb, .home-flow-v_orb"
              data-sync=".pl:not(.out)" data-fps="60" async></script>
@@ -56,24 +61,38 @@ var LISTEN = 1, DONE = 64;      // bits in an item's "fired": 1 listen, 2/4/8 th
 
 // ---------------------------------------------------------------- the orbs on the page
 var items = [], uid = 0, raf = 0, last = 0, dead = false, drawn = 0, busyUntil = 0;
-var root = { querySelectorAll: function () { return items.map(function (it) { return it.canvas; }); } };
+var host = null;                 // the orb whose element has the canvas
+var root = { querySelectorAll: function () { return host && AliceGL.canvas ? [AliceGL.canvas] : []; } };
+var DENSITY = 2;                 // pixels drawn per CSS pixel, on every screen
+var density = DENSITY, avg = 0, since = 0, slowFor = 0;   // see pace()
 
 function attach(el) {
   if (!el || el._aliceOrb) return el && el._aliceOrb;
   if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
   var name = 'site-' + (uid++);
-  var c = document.createElement('canvas');
-  c.setAttribute('aria-hidden', 'true');
-  c.setAttribute('data-theme', 'light');
-  c.setAttribute('data-agent', name);
-  c.style.cssText = 'position:absolute;left:0;top:0;display:block;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 700ms cubic-bezier(.2,.8,.2,1)';
-  var still = el.querySelector('img');
-  if (still && still.parentNode) still.parentNode.insertBefore(c, still.nextSibling); else el.insertBefore(c, el.firstChild);
-  var it = { el: el, canvas: c, still: still, agent: O.agent(name), visible: !hasIO, ready: false, ref: null, k: null, live: false, fired: 0, t0: 0 };
+  var it = { el: el, name: name, still: el.querySelector('img'), agent: O.agent(name), visible: !hasIO, ready: false, ref: null, k: null, live: false, fired: 0, t0: 0 };
   el._aliceOrb = it;
   items.push(it);
   if (hasIO) { seen.observe(el); near.observe(el); } else { arrive(it, performance.now()); idle(prepare); kick(); }
   return it;
+}
+// the orb to draw: the first on screen that has a size (on the homepage, the desktop or the phone diagram's)
+function showing() {
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it.visible && it.el.getBoundingClientRect().width >= 2) return it;
+  }
+  return null;
+}
+// the canvas goes into that orb's element, over its still; the orb it leaves gets its still back
+function place(it) {
+  var c = AliceGL.canvas;
+  if (!c || (host === it && c.parentNode === it.el)) return;
+  if (host && host !== it) unshow(host);
+  c.setAttribute('data-agent', it.name);
+  c.style.opacity = '0'; c.removeAttribute('data-ready'); c._drawn = 0;
+  if (it.still && it.still.parentNode) it.still.parentNode.insertBefore(c, it.still.nextSibling); else it.el.insertBefore(c, it.el.firstChild);
+  host = it;
 }
 function scan(from) {
   var list;
@@ -82,19 +101,29 @@ function scan(from) {
 }
 // the first frame is on the canvas: the orb fades in and the still under it fades out
 function show(it) {
-  if (it.ready || !it.canvas._ctx) return;
+  var c = AliceGL.canvas;
+  if (it.ready || !c || c.parentNode !== it.el || !c._drawn) return;
   it.ready = true;
-  it.canvas.setAttribute('data-ready', '');
-  it.canvas.style.opacity = '1';
+  c.setAttribute('data-ready', '');
+  c.style.opacity = '1';
   if (it.still) { it.still.style.transition = 'opacity 700ms cubic-bezier(.2,.8,.2,1)'; it.still.style.opacity = '0'; }
 }
+// the still back (the canvas moved to the other orb, or the context was taken away)
+function unshow(it, now) {
+  it.ready = false;
+  if (it.still) { it.still.style.transition = now ? 'none' : 'opacity 700ms cubic-bezier(.2,.8,.2,1)'; it.still.style.opacity = ''; }
+  var c = AliceGL.canvas;
+  if (c && c.parentNode === it.el) { c.style.opacity = '0'; c.removeAttribute('data-ready'); c._drawn = 0; }
+}
+// a context taken away: the still at once (the canvas has nothing to show); given back: the orb fades in again
+AliceGL.client({ init: function () { if (items.some(function (it) { return it.visible; })) kick(); }, lost: function () { if (host) unshow(host, true); } });
 // no WebGL 2 after all, or something failed: back to the stills, as if the script had never run
 function die() {
   dead = true; stopLoop();
-  items.forEach(function (it) {
-    if (it.canvas.parentNode) it.canvas.parentNode.removeChild(it.canvas);
-    if (it.still) it.still.style.opacity = '';
-  });
+  var c = AliceGL.canvas;
+  if (c && c.parentNode) c.parentNode.removeChild(c);
+  host = null;
+  items.forEach(function (it) { if (it.still) it.still.style.opacity = ''; });
 }
 
 // ---------------------------------------------------------------- the rounds
@@ -172,17 +201,36 @@ function tick(now) {
     items.forEach(function (it) { if (it.visible) any = true; play(it, now); });
     if (AliceGL.ok()) {
       if (!O.ok) { die(); return; }                    // the shaders failed on this device: the stills stay
+      var it = showing();
+      if (it) place(it);
+      // 2 pixels per CSS pixel on every screen (the engine itself goes up to the screen's density, at most 2)
+      O.setRenderScale(density / Math.min(Math.max(window.devicePixelRatio || 1, 0.5), DENSITY));
       O.step(dt);
       O.render(root);
       drawn++;
-      items.forEach(show);
+      if (host) { show(host); if (host.ready && last && dt) pace(gap, now); }
     } else if (AliceGL.tried && !AliceGL.ever) { die(); return; }   // no WebGL 2 context to be had
   } catch (e) { die(); return; }
+  if (dead) return;
   if ((any || now < busyUntil) && !document.hidden) raf = requestAnimationFrame(tick);
 }
 function kick() {
   if (raf || dead || document.hidden) return;
   last = 0; raf = requestAnimationFrame(tick);
+}
+// A device that can't keep up (under 70% of the frame rate, on average, once the orb has been showing for 2.5 s):
+// the orb is drawn at the screen's own density instead of 2 pixels per CSS pixel. Under 12 frames a second for
+// 2.5 seconds even so: back to the still, as the gradient stops on such a device. Pauses (the tab away, the orb off
+// screen) don't count.
+function pace(gap, now) {
+  if (gap > 250) return;
+  if (!since) since = now;
+  avg = avg ? avg * 0.94 + gap * 0.06 : gap;
+  if (now - since < 2500) return;
+  var base = Math.max(1, Math.min(window.devicePixelRatio || 1, DENSITY));
+  if (density > base && avg > 1000 / fps / 0.7) { density = base; avg = 0; since = 0; slowFor = 0; return; }
+  if (gap > 1000 / 12) { slowFor += gap; if (slowFor > 2500) die(); }
+  else slowFor = 0;
 }
 function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
 

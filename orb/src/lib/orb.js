@@ -1,6 +1,8 @@
-/* src/lib/orb.js: the Alice orb, copied UNCHANGED from homepage v9 (alice-app-v9.js, lines 1380-1853),
-   which lifted it from the Orb Lab. It assigns the variable AliceOrb, which tools/build.mjs declares, and it draws
-   through window.AliceGL (src/gl.js). Change nothing here; the website's part is src/site.js. */
+/* src/lib/orb.js: the Alice orb, copied from homepage v9 (alice-app-v9.js, lines 1380-1853), which lifted it from the
+   Orb Lab. It assigns the variable AliceOrb, which tools/build.mjs declares, and it draws through AliceGL (src/gl.js).
+   Two lines differ from v9, both marked "1.1.0": it uses src/gl.js's context rather than one on window, and a canvas
+   that is the context's own canvas is drawn into directly, without the copy. Change nothing else here; the website's
+   part is src/site.js. */
 // The Alice orb (Ink or Ring), lifted from the Orb Lab: one WebGL2 context draws every
 // canvas.orb on the page. Time is driven from outside (step), so a video can be rendered
 // frame by frame and always look the same.
@@ -91,9 +93,9 @@ AliceOrb = (function () {
   const BAKE = "#version 300 es\nprecision highp float;\nprecision highp int;\nuniform float u_z;\nuniform float u_N;\nuniform int u_P;\nout vec4 fragColor;\nuint uh3(uvec3 p, uint s) {\n  uint h = p.x * 374761393u + p.y * 668265263u + p.z * 2147483647u + s * 2246822519u;\n  h = (h ^ (h >> 13u)) * 1274126177u;\n  return h ^ (h >> 16u);\n}\nvec3 grad(ivec3 c, uint s) {\n  ivec3 w = c % u_P;\n  uint h = uh3(uvec3(w), s);\n  float a = float(h & 65535u) * (6.2831853 / 65536.0);\n  float zc = float(h >> 16u) * (2.0 / 65536.0) - 1.0;\n  float r = sqrt(max(0.0, 1.0 - zc * zc));\n  return vec3(r * cos(a), r * sin(a), zc);\n}\nfloat perlin(vec3 p, uint s) {\n  ivec3 i = ivec3(floor(p));\n  vec3 f = fract(p);\n  vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);\n  float n000 = dot(grad(i, s), f);\n  float n100 = dot(grad(i + ivec3(1, 0, 0), s), f - vec3(1.0, 0.0, 0.0));\n  float n010 = dot(grad(i + ivec3(0, 1, 0), s), f - vec3(0.0, 1.0, 0.0));\n  float n110 = dot(grad(i + ivec3(1, 1, 0), s), f - vec3(1.0, 1.0, 0.0));\n  float n001 = dot(grad(i + ivec3(0, 0, 1), s), f - vec3(0.0, 0.0, 1.0));\n  float n101 = dot(grad(i + ivec3(1, 0, 1), s), f - vec3(1.0, 0.0, 1.0));\n  float n011 = dot(grad(i + ivec3(0, 1, 1), s), f - vec3(0.0, 1.0, 1.0));\n  float n111 = dot(grad(i + ivec3(1, 1, 1), s), f - vec3(1.0, 1.0, 1.0));\n  return mix(mix(mix(n000, n100, u.x), mix(n010, n110, u.x), u.y), mix(mix(n001, n101, u.x), mix(n011, n111, u.x), u.y), u.z);\n}\nvoid main() {\n  vec3 p = vec3(gl_FragCoord.xy, u_z) * (float(u_P) / u_N);\n  vec4 n = vec4(perlin(p, 1u), perlin(p, 2u), perlin(p, 3u), perlin(p, 4u));\n  fragColor = clamp(0.5 + 0.8 * n, 0.0, 1.0);\n}\n";
   const VERT = "#version 300 es\nlayout(location = 0) in vec2 a_pos;\nvoid main() { gl_Position = vec4(a_pos, 0.0, 1.0); }";
   const GLSIZE = 1024;
-  // v9: no context of its own. window.AliceGL (alice-ground-v9.js) holds one WebGL context for every orb and every
-  // gradient on the page; the programs and textures below are built once per context and shared between the copies.
-  const HUB = window.AliceGL;
+  // No context of its own: AliceGL holds it (v9: window.AliceGL, one WebGL context for every orb and every gradient on
+  // the page; 1.1.0: src/gl.js, the orb's own); the programs and textures below are built once per context.
+  const HUB = AliceGL;   // 1.1.0: src/gl.js's context (v9: window.AliceGL, shared with the gradient)
   let gl = null, prog = null, lutTex = null, noiseTex = null, VAO = null;
   let U = {};
   function compile(type, src) {
@@ -361,9 +363,12 @@ AliceOrb = (function () {
     gl.uniform1f(U.u_restE, iv.restE); gl.uniform1f(U.u_anod, iv.anod); gl.uniform1f(U.u_aura, iv.aura); gl.uniform1f(U.u_weight, iv.weight);
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    const ctx = cv._ctx || (cv._ctx = cv.getContext("2d"));
-    ctx.clearRect(0, 0, w, w);
-    ctx.drawImage(HUB.canvas, 0, HUB.canvas.height - w, w, w, 0, 0, w, w);
+    if (cv !== HUB.canvas) {   // 1.1.0: the context's own canvas has the frame already; any other gets a copy, as in v9
+      const ctx = cv._ctx || (cv._ctx = cv.getContext("2d"));
+      ctx.clearRect(0, 0, w, w);
+      ctx.drawImage(HUB.canvas, 0, HUB.canvas.height - w, w, w, 0, 0, w, w);
+    }
+    cv._drawn = (cv._drawn || 0) + 1;
   }
   function fallback(cv) {
     const ctx = cv.getContext("2d"); const w = cv.width = cv.height = 200;
