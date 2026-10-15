@@ -35,18 +35,19 @@
   .seg button { padding: 5px 11px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
   .status { margin-left: auto; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  .wrap { max-width: 1440px; margin: 0 auto; }
+  .wrap { margin: 0 auto; }                         /* full width: resize the window to try other proportions */
   body.phone .wrap { max-width: 390px; box-shadow: 0 0 0 1px var(--line); }
   .label { display: flex; justify-content: space-between; gap: 16px; padding: 48px 24px 14px; color: var(--muted); font-size: 13px; }
   .label b { color: var(--ink); font-weight: 600; }
+  /* the still is fitted to the box's height and centred, the way the gradient itself is drawn; the colour under it is stretched */
   .ground { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; background-color: var(--night);
-    background-position: 50% 0, 0 0; background-size: 100% 100%, 100% 100%; background-repeat: no-repeat; }
+    background-position: 50% 0, 0 0; background-size: auto 100%, 100% 100%; background-repeat: no-repeat; }
 
   /* hero: the field on its own, at v9's proportions */
-  .hero { position: relative; overflow: hidden; aspect-ratio: 1440 / 1125; }
-  .g-hero { background-image: url(images/hero-desktop.webp), linear-gradient(180deg, #ebfef6 0%, #e7fbf3 20%, #85ada9 40%, #145256 55%, #001a1f 70%, #00070b 85%, #000305 100%); }
-  body.phone .hero { aspect-ratio: 390 / 413; }
-  body.phone .g-hero { background-image: url(images/hero-phone.webp), linear-gradient(180deg, #eafef6 0%, #e5faf2 20%, #78a2a0 40%, #104f54 55%, #00191f 70%, #00070b 85%, #000305 100%); }
+  .hero { position: relative; overflow: hidden; height: min(78.125vw, 1125px); }      /* v9's 1440 x 1125, then only wider */
+  .g-hero { background-image: url(images/hero.webp), linear-gradient(180deg, #ebfef6 0%, #e7fbf3 20%, #85ada9 40%, #145256 55%, #001a1f 70%, #00070b 85%, #000305 100%); }
+  body.phone .hero { height: auto; aspect-ratio: 390 / 413; }
+  body.phone .g-hero { background-image: url(images/hero.webp), linear-gradient(180deg, #eafef6 0%, #e5faf2 20%, #78a2a0 40%, #104f54 55%, #00191f 70%, #00070b 85%, #000305 100%); }
 
   /* the pricing plan card */
   .plan-row { display: flex; justify-content: center; padding: 0 24px; }
@@ -56,15 +57,19 @@
   .plan .ground { position: absolute; z-index: 0; }
   .plan b { font-size: 30px; line-height: 36px; font-weight: 500; letter-spacing: -.02em; }
   .plan span { color: rgba(255, 255, 255, .7); font-size: 14px; }
-  .g-plan { background-image: url(images/plan-desktop.webp), linear-gradient(180deg, #1f3e3f 0%, #113335 20%, #022326 40%, #00181c 55%, #000f13 70%, #00080c 85%, #000407 100%); }
+  .g-plan { background-image: url(images/plan.webp), linear-gradient(180deg, #1f3e3f 0%, #113335 20%, #022326 40%, #00181c 55%, #000f13 70%, #00080c 85%, #000407 100%); }
   body.phone .plan { aspect-ratio: 358 / 833; padding: 28px 24px; border-radius: 20px; }
-  body.phone .g-plan { background-image: url(images/plan-phone.webp), linear-gradient(180deg, #1a393a 0%, #0d2f32 20%, #002125 40%, #00171b 55%, #000e12 70%, #00070b 85%, #000406 100%); }
+  body.phone .g-plan { background-image: url(images/plan.webp), linear-gradient(180deg, #1a393a 0%, #0d2f32 20%, #002125 40%, #00171b 55%, #000e12 70%, #00070b 85%, #000406 100%); }
 
   /* the closing, as built in Webflow: white page above, the fade, the text on the light, into the black footer */
   .above { display: grid; place-items: center; height: 220px; color: var(--muted); font-size: 13px; }
   .closing { position: relative; overflow: hidden; background: var(--night); }
   .g-close { background-image: url(images/close-desktop.webp), linear-gradient(180deg, #f0fcf8 0%, #effcf7 20%, #effcf7 40%, #e5f3ee 55%, #678383 70%, #00080b 85%, #000202 100%); }
   body.phone .g-close { background-image: url(images/close-phone.webp), linear-gradient(180deg, #b1c6c2 0%, #effcf7 20%, #f0fcf7 40%, #effcf7 55%, #96aeab 70%, #000c0f 85%, #000202 100%); }
+  /* a window 479 wide or narrower is a phone, as on the website (Webflow's phone breakpoint) */
+  @media (max-width: 479px) {
+    .g-close { background-image: url(images/close-phone.webp), linear-gradient(180deg, #b1c6c2 0%, #effcf7 20%, #f0fcf7 40%, #effcf7 55%, #96aeab 70%, #000c0f 85%, #000202 100%); }
+  }
   .fade { position: absolute; top: 0; left: 0; right: 0; z-index: 1; height: 300px; pointer-events: none;
     background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, .94) 14%, rgba(255, 255, 255, .77) 32%, rgba(255, 255, 255, .5) 52%, rgba(255, 255, 255, .21) 74%, rgba(255, 255, 255, 0) 100%); }
   .closing-in { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 200px 24px 320px; text-align: center; }
@@ -97,15 +102,15 @@
   </div>
 
   <div class="wrap">
-    <div class="label"><span><b>Hero</b> · the design system's field (v5), moving grain</span><span>hero-desktop.webp · hero-phone.webp</span></div>
+    <div class="label"><span><b>Hero</b> · the design system's field (v5), moving grain</span><span>hero.webp</span></div>
     <section class="hero"><div class="ground g-hero" data-alice-ground="hero"></div></section>
 
-    <div class="label"><span><b>Pricing plan</b> · the dark version, moving slowly</span><span>plan-desktop.webp · plan-phone.webp</span></div>
+    <div class="label"><span><b>Pricing plan</b> · the dark version, moving slowly</span><span>plan.webp</span></div>
     <div class="plan-row">
       <div class="plan"><div class="ground g-plan" data-alice-ground="plan"></div><b>Plan card</b><span>The text and prices go here.</span></div>
     </div>
 
-    <div class="label"><span><b>Closing</b> · as on the website, above the footer</span><span>close-desktop.webp · close-phone.webp</span></div>
+    <div class="label"><span><b>Closing</b> · as on the website, above the footer · try any window width</span><span>close-desktop.webp · close-phone.webp</span></div>
     <div class="above">Page content above the closing</div>
     <section class="closing">
       <div class="ground g-close" data-alice-ground="close"></div>

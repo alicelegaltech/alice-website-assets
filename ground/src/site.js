@@ -10,10 +10,13 @@
 
    From v9's runtime, unchanged: one WebGL context for the whole page that every gradient
    draws through in turn (browsers keep only a few alive per page), the looks, and how a frame
-   is drawn and copied out. So a frame here is v9's frame, pixel for pixel.
+   is drawn and copied out. So a frame here is v9's frame, pixel for pixel, with one exception
+   (1.1.0): a box too big for a canvas (2600 device pixels either way) is drawn at a lower
+   resolution in both directions, so it keeps its proportions, where v9 squeezed it in one.
 
      <div data-alice-ground="close"></div>       close · hero · plan (an element that is positioned)
-     <script src=".../alice-ground.min.js" data-fps="30" defer></script>     30 or 60
+     <script src=".../alice-ground.min.js" data-fps="30" async></script>     30 or 60
+   On alice.law the loader in the site's footer code adds that script tag (see the README).
 
    window.AliceGround: mount(canvas, look), attach(element), scan(), relook(canvas, look),
    still(look, w, h), setFps(n), freeze(), LOOKS, look(name), items, version, and for testing:
@@ -136,7 +139,7 @@
   var PHONE = 479;                   // Webflow's phone breakpoint: a ground this wide or narrower takes its phone look
   var MAXW = 2600, MAXH = 2600;      // v9's limits on a canvas, in device pixels
 
-  // ---------------------------------------------------------------- drawing (v9's, unchanged)
+  // ---------------------------------------------------------------- drawing (v9's, but for the canvas size in measure())
   var items = [], raf = 0, last = 0, frozen = false, dead = false, startedAt = 0, slowFor = 0, drawn = 0;
 
   // what a renderer sees as its canvas: the shared context, and a size that is only the part it draws into
@@ -154,7 +157,10 @@
   }
   function measure(it) {
     var r = it.canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    var w = Math.max(2, Math.min(MAXW, Math.round(r.width * dpr))), h = Math.max(2, Math.min(MAXH, Math.round(r.height * dpr)));
+    // device pixels per CSS pixel; a box too big for the limits gets fewer, the same both ways (v9 cut each side
+    // separately, which squeezed the gradient sideways on very large screens)
+    var s = Math.min(dpr, MAXW / Math.max(1, r.width), MAXH / Math.max(1, r.height));
+    var w = Math.max(2, Math.min(MAXW, Math.round(r.width * s))), h = Math.max(2, Math.min(MAXH, Math.round(r.height * s)));
     if (w !== it.w || h !== it.h) { it.w = w; it.h = h; it.canvas.width = w; it.canvas.height = h; it.ctx = null; }
   }
   function drawOne(it) {
