@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alice orb · test page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500&display=swap">
+<style>
+/* ---- the homepage's sources section, with the CSS it has in Webflow (classes, the Home CSS's light along the lines) ---- */
+:root{--color--ink:#000;--color--ink-muted:rgba(0,10,38,.6);--color--line:rgba(0,10,38,.1);--color--line-strong:rgba(0,10,38,.2);--color--surface:#fff;--color--surface-alt:#f4f5f5;
+--color--accent:#2e6e72;--color--accent-soft:rgba(46,110,114,.12);--color--mint:#edfdf7;--color--night:#010202;--color--deep:#03090b;--color--white:#fff;--color--glow:#80e0e6;
+--font--display:"Inter Tight",Inter,system-ui,sans-serif;--font--text:Inter,system-ui,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:24px;color:#000;background:#fff;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0 0 10px}
+p{margin-top:0;margin-bottom:10px}
+img{max-width:100%;vertical-align:middle;display:inline-block}
+a{color:inherit}
+figure{margin:0 0 10px}
+.padding-global{padding-left:5rem;padding-right:5rem}
+.container-large{width:100%;max-width:80rem;margin-left:auto;margin-right:auto}
+.heading-style-h2{font-family:'Inter Tight';font-size:3.25rem;line-height:3.625rem;font-weight:500;letter-spacing:-.032em}
+.text-style-eyebrow{font-family:Inter;color:#2e6e72;font-size:.875rem;line-height:1.25rem;font-weight:600;letter-spacing:.01em}
+.text-size-large{font-family:Inter;font-size:1.125rem;line-height:1.75rem;font-weight:400}
+.tag{display:inline-flex;padding:.125rem .5rem;justify-content:center;align-items:center;gap:.5rem;border-radius:6px;background-color:#f4f5f5;font-family:Inter;color:#000;font-size:.75rem;line-height:1rem;font-weight:600;letter-spacing:.01em;text-decoration:none}
+@media screen and (max-width:991px){.padding-global{padding-left:2.25rem;padding-right:2.25rem}.heading-style-h2{font-size:2.75rem;line-height:3rem}}
+@media screen and (max-width:767px){.padding-global{padding-left:1.5rem;padding-right:1.5rem}}
+@media screen and (max-width:479px){.heading-style-h2{font-size:2.125rem;line-height:2.375rem}.text-size-large{font-size:1.0625rem;line-height:1.625rem}}
+.text-style-eyebrow.home-eyebrow{display: block; margin-top: 0; margin-bottom: 1.25rem;}
+.heading-style-h2.home-h2{max-width: 45rem; margin-top: 0; margin-bottom: 0; color: var(--color--ink); text-wrap: balance;}
+.heading-style-h2.home-h2.is-center{max-width: 56.25rem;}
+.home-h2_muted{color: rgba(0, 10, 38, 0.58);}
+.text-size-large.home-lede{margin-top: 0; margin-bottom: 0; color: var(--color--ink-muted); text-wrap: pretty;}
+.text-size-large.home-lede.is-center{max-width: 35rem; margin-top: 1.5rem;}
+.home-head-center{display: flex; flex-direction: column; align-items: center; margin-bottom: 4rem; text-align: center;}
+.home-rule{padding-top: 7.5rem; border-top-style: solid; border-top-width: 1px; border-top-color: var(--color--line);}
+.tag.is-glow{flex: 0 0 auto; white-space: nowrap; background-color: rgba(128, 224, 230, 0.14); box-shadow: inset 0 0 0 1px rgba(128, 224, 230, 0.14); color: var(--color--glow);}
+@media screen and (max-width: 991px){.home-head-center{ margin-bottom: 3rem; }}
+@media screen and (max-width: 479px){.text-style-eyebrow.home-eyebrow{ margin-bottom: 1rem; }.home-rule{ padding-top: 5rem; }}
+.section_home-sources{position: relative; padding-bottom: 7.5rem;}
+.home-flow{display: grid; grid-template-columns: clamp(13.5rem, 25vw, 20rem) minmax(0, 1fr) 9.25rem minmax(0, 1fr) clamp(13.5rem, 25vw, 20rem); height: 26.25rem; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;}
+.home-flow_col{display: flex; flex-direction: column; justify-content: center; row-gap: 2.625rem;}
+.home-flow_tile{display: flex; align-items: center; column-gap: 0.875rem; min-height: 5.25rem; padding-right: 1.125rem; padding-left: 1.125rem; border-radius: 1rem; background-color: var(--color--white); box-shadow: 0 0 0 1px rgba(0, 10, 38, 0.1), 0 14px 32px -20px rgba(4, 22, 26, 0.35); text-align: left;}
+.home-flow_tile.is-flow-out{background-color: #000000; box-shadow: 0 14px 32px -20px rgba(4, 22, 26, 0.6); color: var(--color--white);}
+.home-flow_icon{display: flex; flex: 0 0 auto; justify-content: center; align-items: center; width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; background-color: var(--color--accent-soft); color: var(--color--accent);}
+.home-flow_num{display: flex; flex: 0 0 auto; justify-content: center; align-items: center; width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; background-color: rgba(255, 255, 255, 0.08); color: var(--color--glow); font-size: 0.875rem; line-height: 1; font-weight: 600;}
+.home-flow_title{display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.5rem; row-gap: 0.25rem; color: var(--color--ink); font-family: var(--font--display); font-size: 1.125rem; line-height: 1.5rem; font-weight: 500; letter-spacing: -0.01em;}
+.home-flow_title.is-title-light{color: var(--color--white);}
+.home-flow_sub{margin-top: 0.125rem; color: var(--color--ink-muted); font-size: 0.875rem; line-height: 1.25rem;}
+.home-flow_sub.is-sub-light{color: rgba(255, 255, 255, 0.64);}
+.home-flow_lines{position: relative;}
+.home-flow_center{display: flex; justify-content: center; align-items: center;}
+.home-flow_orb{position: relative; width: 8rem; height: 8rem;}
+.home-flow_label{position: absolute; top: 100%; right: -3rem; left: -3rem; margin-top: 0.875rem; color: var(--color--ink); font-family: var(--font--display); font-size: 1.125rem; line-height: 1.5rem; font-weight: 500; letter-spacing: -0.01em; text-align: center;}
+.home-flow-v{display: none; max-width: 22.375rem; margin-top: 0; margin-right: auto; margin-bottom: 0; margin-left: auto;}
+.home-flow-v_row{display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 0.875rem;}
+.home-flow-v_tile{display: flex; flex-direction: column; justify-content: center; align-items: center; row-gap: 0.5rem; height: 6rem; padding-right: 0.375rem; padding-left: 0.375rem; border-radius: 0.875rem; background-color: var(--color--white); box-shadow: 0 0 0 1px rgba(0, 10, 38, 0.1), 0 10px 24px -16px rgba(4, 22, 26, 0.35); text-align: center;}
+.home-flow-v_tile.is-vtile-out{height: 6.5rem; background-color: #000000; box-shadow: 0 10px 24px -16px rgba(4, 22, 26, 0.6);}
+.home-flow-v_icon{display: flex; justify-content: center; align-items: center; width: 2.125rem; height: 2.125rem; border-radius: 0.625rem; background-color: var(--color--accent-soft); color: var(--color--accent);}
+.home-flow-v_num{display: flex; justify-content: center; align-items: center; width: 2.125rem; height: 2.125rem; border-radius: 0.625rem; background-color: rgba(255, 255, 255, 0.08); color: var(--color--glow); font-size: 0.8125rem; line-height: 1; font-weight: 600;}
+.home-flow-v_label{color: var(--color--ink); font-family: var(--font--display); font-size: 0.8125rem; line-height: 1rem; font-weight: 500;}
+.home-flow-v_label.is-label-light{color: var(--color--white);}
+.home-flow-v_label.is-label-alice{position: absolute; top: 50%; left: 50%; margin-top: -0.75rem; margin-left: 4.1875rem; font-size: 1.0625rem; line-height: 1.5rem;}
+.home-flow-v_lines{position: relative; height: 7.375rem;}
+.home-flow-v_lines.is-vlines-out{height: 6.5rem;}
+.home-flow-v_center{position: relative; display: flex; justify-content: center; height: 6.5rem;}
+.home-flow-v_orb{width: 6.5rem; height: 6.5rem;}
+@media screen and (max-width: 991px){.home-flow{ display: none; }.home-flow-v{ display: block; }}
+@media screen and (max-width: 479px){.section_home-sources{ padding-bottom: 5rem; }}
+@keyframes home-pulse{ 0% { stroke-dashoffset: .08; } 18.333% { stroke-dashoffset: -1.02; } 100% { stroke-dashoffset: -1.02; } }
+.home-lines .pl{fill: none; stroke: #2e6e72; stroke-width: 3; stroke-linecap: round; stroke-dasharray: .08 1.2; stroke-dashoffset: .08; filter: drop-shadow(0 0 4px #80e0e6);
+  animation: home-pulse 6s cubic-bezier(.65, 0, .35, 1) infinite both; animation-delay: var(--d, 0ms);}
+.home-lines .pl.out{animation-delay: calc(3000ms + var(--d, 0ms));}
+@media (prefers-reduced-motion: reduce){.home-lines .pl{ display: none; }}
+:root{--reveal-distance: 24px; --reveal-duration: 900ms; --reveal-stagger: 90ms; --count-duration: 1400ms;}
+
+/* ---- this page ---- */
+.bar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 20px;
+  background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color--line); font-size: 13px; }
+.bar h1 { margin: 0 8px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.ctl { display: flex; align-items: center; gap: 8px; color: var(--color--ink-muted); }
+.seg { display: inline-flex; padding: 2px; border: 1px solid var(--color--line); border-radius: 9px; }
+.seg button { padding: 5px 11px; border: 0; border-radius: 7px; background: none; color: var(--color--ink-muted); font: inherit; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--color--ink); color: #fff; }
+.status { margin-left: auto; color: var(--color--ink-muted); font-variant-numeric: tabular-nums; }
+.note { max-width: 44rem; margin: 0 auto; padding: 40px 24px 0; color: var(--color--ink-muted); font-size: 14px; line-height: 22px; }
+.spacer { height: 70vh; display: flex; align-items: center; justify-content: center; color: var(--color--ink-muted); font-size: 13px; }
+/* "Phone": the phone diagram at any window width */
+body.phone .home-flow { display: none; }
+body.phone .home-flow-v { display: block; }
+body.phone .section_home-sources { max-width: 390px; margin: 0 auto; box-shadow: 0 0 0 1px var(--color--line); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>Alice orb</h1>
+  <div class="ctl">Orb <span class="seg" data-set="orb"><button data-v="live">Live</button><button data-v="still">Still</button></span></div>
+  <div class="ctl">Layout <span class="seg" data-set="layout"><button data-v="desktop">Desktop</button><button data-v="phone">Phone</button></span></div>
+  <div class="ctl">Frames a second <span class="seg" data-set="fps"><button data-v="60">60</button><button data-v="30">30</button></span></div>
+  <span class="status" id="status">…</span>
+</div>
+<p class="note">The homepage's sources section as it is built in Webflow. Alice listens as the light leaves the three sources, takes each one in as its light arrives, reads them, and lights up as the light leaves her for the three steps; a round every 6 seconds, in step with the lines. Scroll the section out of view and back to see it pause and wait for the next round. "Still" shows the page without the script: the image the orb fades in over.</p>
+<div class="spacer">Scroll down</div>
+<section class="section_home-sources">
+<div class="padding-global"><div class="container-large"><div class="home-rule">
+<div class="home-head-center"><div class="text-style-eyebrow home-eyebrow">Sources</div><h2 class="heading-style-h2 home-h2 is-center">Build on every source that matters. <span class="home-h2_muted">Every insight stays traceable.</span></h2><p class="text-size-large home-lede is-center">Your documents, legal sources and firm knowledge in one place.</p></div>
+<figure data-reveal class="home-flow" aria-label="Your case documents, legal sources and firm knowledge flow into Alice, which turns them into the analysis, the strategy and the legal work.">
+<div class="home-flow_col"><div class="home-flow_tile"><div class="home-flow_icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg></div><div><div class="home-flow_title">Case documents</div><div class="home-flow_sub">Evidence, correspondence, pleadings</div></div></div><div class="home-flow_tile"><div class="home-flow_icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6 4 14"></path><path d="M12 6v14"></path><path d="M8 8v12"></path><path d="M4 4v16"></path></svg></div><div><div class="home-flow_title">Legal sources</div><div class="home-flow_sub">Legislation, case law, doctrine</div></div></div><div class="home-flow_tile"><div class="home-flow_icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div><div><div class="home-flow_title">Firm knowledge</div><div class="home-flow_sub">Precedents, templates, know-how</div></div></div></div>
+<div class="home-flow_lines" data-slot="lines-in"><svg class="home-lines" viewBox="0 0 266 420" preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true" focusable="false" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible"><path d="M0 84C133 84 133 210 266 210" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M0 210L266 210" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M0 336C133 336 133 210 266 210" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:0ms" pathLength="1" d="M0 84C133 84 133 210 266 210" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:130ms" pathLength="1" d="M0 210L266 210" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:260ms" pathLength="1" d="M0 336C133 336 133 210 266 210" vector-effect="non-scaling-stroke"></path></svg></div>
+<div class="home-flow_center"><div class="home-flow_orb" data-slot="orb"><img src="images/still.webp" alt="" style="display:block;width:100%;height:100%"><div class="home-flow_label">Alice</div></div></div>
+<div class="home-flow_lines" data-slot="lines-out"><svg class="home-lines" viewBox="0 0 266 420" preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true" focusable="false" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible"><path d="M0 210C133 210 133 84 266 84" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M0 210L266 210" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M0 210C133 210 133 336 266 336" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:0ms" pathLength="1" d="M0 210C133 210 133 84 266 84" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:130ms" pathLength="1" d="M0 210L266 210" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:260ms" pathLength="1" d="M0 210C133 210 133 336 266 336" vector-effect="non-scaling-stroke"></path></svg></div>
+<div class="home-flow_col"><div class="home-flow_tile is-flow-out"><div class="home-flow_num">01</div><div><div class="home-flow_title is-title-light">Understand</div><div class="home-flow_sub is-sub-light">Factual analysis · legal soon</div></div></div><div class="home-flow_tile is-flow-out"><div class="home-flow_num">02</div><div><div class="home-flow_title is-title-light">Strategize <span class="tag is-glow">Roadmap</span></div><div class="home-flow_sub is-sub-light">Strategic paths and risks</div></div></div><div class="home-flow_tile is-flow-out"><div class="home-flow_num">03</div><div><div class="home-flow_title is-title-light">Execute</div><div class="home-flow_sub is-sub-light">Arguments, letters, pleadings</div></div></div></div>
+</figure>
+<figure data-reveal class="home-flow-v" aria-label="Your case documents, legal sources and firm knowledge flow into Alice, which turns them into the analysis, the strategy and the legal work.">
+<div class="home-flow-v_row"><div class="home-flow-v_tile"><div class="home-flow-v_icon"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg></div><div class="home-flow-v_label">Case documents</div></div><div class="home-flow-v_tile"><div class="home-flow-v_icon"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6 4 14"></path><path d="M12 6v14"></path><path d="M8 8v12"></path><path d="M4 4v16"></path></svg></div><div class="home-flow-v_label">Legal sources</div></div><div class="home-flow-v_tile"><div class="home-flow-v_icon"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div><div class="home-flow-v_label">Firm knowledge</div></div></div>
+<div class="home-flow-v_lines" data-slot="vlines-in"><svg class="home-lines" viewBox="0 0 358 118" preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true" focusable="false" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible"><path d="M55 0C55 64 179 54 179 118" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M179 0L179 118" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M303 0C303 64 179 54 179 118" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:0ms" pathLength="1" d="M55 0C55 64 179 54 179 118" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:130ms" pathLength="1" d="M179 0L179 118" vector-effect="non-scaling-stroke"></path><path class="pl in" style="--d:260ms" pathLength="1" d="M303 0C303 64 179 54 179 118" vector-effect="non-scaling-stroke"></path></svg></div>
+<div class="home-flow-v_center"><div class="home-flow-v_orb" data-slot="vorb"><img src="images/still.webp" alt="" style="display:block;width:100%;height:100%"></div><div class="home-flow-v_label is-label-alice">Alice</div></div>
+<div class="home-flow-v_lines is-vlines-out" data-slot="vlines-out"><svg class="home-lines" viewBox="0 0 358 104" preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true" focusable="false" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible"><path d="M179 0C179 60 55 44 55 104" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M179 0L179 104" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path d="M179 0C179 60 303 44 303 104" fill="none" stroke="#2e6e72" stroke-opacity=".45" stroke-width="1.5" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:0ms" pathLength="1" d="M179 0C179 60 55 44 55 104" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:130ms" pathLength="1" d="M179 0L179 104" vector-effect="non-scaling-stroke"></path><path class="pl out" style="--d:260ms" pathLength="1" d="M179 0C179 60 303 44 303 104" vector-effect="non-scaling-stroke"></path></svg></div>
+<div class="home-flow-v_row"><div class="home-flow-v_tile is-vtile-out"><div class="home-flow-v_num">01</div><div class="home-flow-v_label is-label-light">Understand</div></div><div class="home-flow-v_tile is-vtile-out"><div class="home-flow-v_num">02</div><div class="home-flow-v_label is-label-light">Strategize</div><span class="tag is-glow">Roadmap</span></div><div class="home-flow-v_tile is-vtile-out"><div class="home-flow-v_num">03</div><div class="home-flow-v_label is-label-light">Execute</div></div></div>
+</figure>
+</div></div></div>
+</section>
+<div class="spacer">The orb stops drawing when the section is out of view.</div>
+<script>
+  /* the bar: Live/Still and the frame rate need a reload (they are read when the script starts), the layout doesn't */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var set = { orb: q.get('orb') || 'live', layout: q.get('layout') || 'desktop', fps: q.get('fps') || '60' };
+    if (set.layout === 'phone') document.body.classList.add('phone');
+    document.querySelectorAll('.seg').forEach(function (seg) {
+      var k = seg.getAttribute('data-set');
+      seg.querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === set[k]));
+        b.addEventListener('click', function () {
+          set[k] = b.getAttribute('data-v');
+          if (k === 'layout') {
+            document.body.classList.toggle('phone', set.layout === 'phone');
+            seg.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+            history.replaceState(null, '', '?' + new URLSearchParams(set));
+            return;
+          }
+          location.search = '?' + new URLSearchParams(set);
+        });
+      });
+    });
+    window.TEST_SET = set;
+    if (set.orb !== 'live') { document.getElementById('status').textContent = 'The still, without the script'; return; }
+    /* as the loader on alice.law adds it (see the README), here from this folder */
+    var s = document.createElement('script');
+    s.src = 'alice-orb.js';
+    s.setAttribute('data-targets', '.home-flow_orb, .home-flow-v_orb');
+    s.setAttribute('data-sync', '.pl:not(.out)');
+    s.setAttribute('data-fps', set.fps);
+    document.body.appendChild(s);
+    var shown = 0, t0 = performance.now(), d0 = 0;
+    setInterval(function () {
+      var A = window.AliceOrbSite; if (!A) return;
+      var now = performance.now(), d = A.drawn, rate = Math.round((d - d0) * 1000 / (now - t0)); t0 = now; d0 = d;
+      var it = A.items.filter(function (x) { return x.visible; })[0];
+      var st = it ? it.agent.state().mode : '–';
+      document.getElementById('status').textContent = A.webgl === false ? 'No WebGL 2 here: the still stays' :
+        (A.running ? rate + ' frames a second' : 'paused') + ' · Alice: ' + st;
+    }, 500);
+  })();
+</script>
+</body>
+</html>
